@@ -5,6 +5,13 @@ Download wikipedia latest dump
   ```
   
 
+Building a flat jar
+------------
+
+  ```
+  mvn clean compile assembly:single
+  ```
+
 Running the indexer
 ------------
 
