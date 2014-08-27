@@ -1,14 +1,17 @@
 package wikisearch;
 
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.benchmark.byTask.feeds.ContentSource;
-import org.apache.lucene.benchmark.byTask.feeds.DocMaker;
-import org.apache.lucene.benchmark.byTask.feeds.EnwikiContentSource;
 import org.apache.lucene.benchmark.byTask.feeds.NoMoreDataException;
 import org.apache.lucene.benchmark.byTask.utils.Config;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.util.Version;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 
 public class WikiIndexer {
@@ -29,59 +32,28 @@ public class WikiIndexer {
         }
     }
 
-    public File directory(int count, File directory) {
-        if (directory == null) {
-            directory = outputDir;
-        }
-        int base = BASE;
-        while (base <= count) {
-            base *= BASE;
-        }
-        if (count < BASE) {
-            return directory;
-        }
-        directory = new File(directory, (Integer.toString(base / BASE)));
-        directory = new File(directory, (Integer.toString(count / (base / BASE))));
-        return directory(count % (base / BASE), directory);
-    }
-
-    public void create(String id, String title, String time, String body) {
-
-        File d = directory(count++, null);
-        d.mkdirs();
-        File f = new File(d, id + ".txt");
-
-        StringBuilder contents = new StringBuilder();
-
-        contents.append(time);
-        contents.append("\n\n");
-        contents.append(title);
-        contents.append("\n\n");
-        contents.append(body);
-        contents.append("\n");
-
-        try {
-            Writer writer = new OutputStreamWriter(new FileOutputStream(f), StandardCharsets.UTF_8);
-            writer.write(contents.toString());
-            writer.close();
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        }
-
-    }
-
     public void index() throws Exception {
-        Document doc = null;
-        System.out.println("Starting Extraction");
+        Document doc;
+        System.out.println("Starting indexing");
         long start = System.currentTimeMillis();
+
+        Directory dir = FSDirectory.open(outputDir);
+        IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_48, new StandardAnalyzer(Version.LUCENE_48));
+        IndexWriter writer = new IndexWriter(dir, config);
+
         try {
+            int count = 0;
             while ((doc = docMaker.makeDocument()) != null) {
-                create(doc.get(DocMaker.ID_FIELD), doc.get(DocMaker.TITLE_FIELD), doc
-                        .get(DocMaker.DATE_FIELD), doc.get(DocMaker.BODY_FIELD));
+                if (++count % 1000 == 0) {
+                    System.out.println(count + " " + doc.get("doctitle"));
+                }
+                writer.addDocument(doc);
             }
         } catch (NoMoreDataException e) {
             //continue
         }
+
+        writer.close();
         long finish = System.currentTimeMillis();
         System.out.println("Extraction took " + (finish - start) + " ms");
     }
