@@ -3,8 +3,11 @@ package wikisearch;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.miscellaneous.LengthFilter;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.standard.StandardFilter;
 import org.apache.lucene.analysis.wikipedia.WikipediaTokenizer;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.util.Version;
 
 import java.io.Reader;
@@ -32,6 +35,7 @@ public class WikipediaAnalyzer extends Analyzer {
     protected TokenStreamComponents createComponents(String fieldName, Reader reader) {
         final Tokenizer src = new WikipediaTokenizer(reader);
         TokenStream tok = new StandardFilter(matchVersion, src);
+        tok = new LengthFilter(this.matchVersion, tok, 0, IndexWriter.MAX_TERM_LENGTH);
         return new TokenStreamComponents(src, tok);
     }
 }

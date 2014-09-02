@@ -65,7 +65,11 @@ public final class WikiIndexer {
                     System.out.println(count + " " + doc.get("doctitle") + "| contributor " + doc.get("docusername"));
                     writer.commit();
                 }
-                writer.addDocument(doc);
+                try {
+                    writer.addDocument(doc);
+                } catch (IllegalArgumentException iae) {
+                    iae.printStackTrace();
+                }
             }
         } catch (NoMoreDataException e) {
             //continue
