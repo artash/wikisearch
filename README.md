@@ -5,7 +5,7 @@ Download wikipedia latest dump
   ```
   
 
-Building a flat jar
+Building a fat jar
 ------------
 
   ```
